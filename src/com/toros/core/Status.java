@@ -1,6 +1,8 @@
 package com.toros.core;
 
-public enum Status {
+import java.io.Serializable;
+
+public enum Status implements Serializable {
 
     NONE,
     BORN,

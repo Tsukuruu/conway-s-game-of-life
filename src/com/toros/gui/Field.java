@@ -5,9 +5,11 @@ import com.toros.core.Status;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.Serializable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 
-class Field extends JPanel implements Serializable {
+class Field extends JPanel{
 
     private Box[][] boxes;
     private Timer timer;
@@ -52,6 +54,10 @@ class Field extends JPanel implements Serializable {
         }
     }
 
+    public Box[][] getBoxes() {
+        return boxes;
+    }
+
     private void initTimer(){
         TimerListener tl = new TimerListener();
         timer = new Timer(Config.SLEEPMS, tl);
@@ -64,7 +70,8 @@ class Field extends JPanel implements Serializable {
     void clear(){
         for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
             for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
-                boxes[x][y].die();
+                boxes[x][y].getCell().setStatus(Status.NONE);
+                boxes[x][y].setColor();
             }
         }
     }

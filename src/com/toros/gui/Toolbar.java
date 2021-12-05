@@ -1,5 +1,6 @@
 package com.toros.gui;
 import com.toros.config.*;
+import com.toros.core.Cell;
 import com.toros.core.Status;
 
 import javax.swing.*;
@@ -8,13 +9,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import javax.swing.Box;
-import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 class Toolbar extends JPanel {
+
+    /* Link to frame for dialog windows */
+    JFrame frame;
 
     Field field;
 
@@ -22,18 +25,25 @@ class Toolbar extends JPanel {
     JButton stopButton;
     JButton clearButton;
     JButton saveButton;
+    JButton loadSaveButton;
+    JButton randomConfButton;
+
+    JSpinner speedFieldSpinner;
+    JSpinner initialChanceSpinner;
 
     Legend legend;
     TimerPanel timerPanel;
 
-    Toolbar(Field field){
+    Toolbar(Field field, JFrame frame){
         super();
         this.field = field;
+        this.frame = frame;
 
         setPreferredSize(new Dimension(Config.TOOLBAR_WIDTH, Config.FRAME_HEIGHT));
         setBackground(Config.TOOLBAR_COLOR);
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
+        /* BUTTONS */
         startButton = ButtonFactory("Start");
         startButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -65,33 +75,151 @@ class Toolbar extends JPanel {
         saveButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("C:\\alikbrat\\AA_UNIVER\\OOP\\KURSACH\\conways-game\\src\\com.toros.config.saves\\field.dat"))))
+                File save = new File(Config.SAVES_FILE_PATH);
+                try{
+                    save.createNewFile();
+                }catch (Exception ex){
+                    ex.printStackTrace();
+                }
+
+                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(save, false)))
                 {
-                    oos.writeObject(field);
+                    com.toros.gui.Box[][] boxes = field.getBoxes();
+                    for(int i = 0; i < Config.VERTICAL_BOXES; i++){
+                        for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
+                            oos.writeObject(boxes[i][j].getCell());
+                        }
+                    }
+
+                    JOptionPane.showMessageDialog(frame, "Successfully saved!", "Success", JOptionPane.PLAIN_MESSAGE);
                 }
                 catch(Exception ex){
-
+                    JOptionPane.showMessageDialog(frame, "Sorry, something get wrong.", "Error", JOptionPane.ERROR_MESSAGE);
                     ex.printStackTrace();
                 }
             }
         });
 
+        loadSaveButton = ButtonFactory("Load Save");
+        loadSaveButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                File save = new File(Config.SAVES_FILE_PATH);
+                if(!save.isFile()){
+                    JOptionPane.showMessageDialog(frame, "Error! No save found.", "No save", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+
+                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(save)))
+                {
+                    com.toros.gui.Box[][] boxes = field.getBoxes();
+                    for(int i = 0; i < Config.VERTICAL_BOXES; i++){
+                        for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
+                            boxes[i][j].setCell((Cell) ois.readObject());
+                        }
+                    }
+
+                    //Define neighbours
+                    for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
+                        for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
+                            for(int sx = -1; sx <= 1; sx++){
+                                for(int sy = -1; sy <= 1; sy++){
+                                    if(sx == 0 && sy == 0) continue;
+                                    //Compute neighbours to create torus-like field
+                                    boxes[x][y].getCell().addNeighbour(boxes
+                                            [(x + sx + Config.VERTICAL_BOXES) % Config.VERTICAL_BOXES]
+                                            [(y + sy + Config.HORIZONTAL_BOXES) % Config.HORIZONTAL_BOXES].getCell());
+                                }
+                            }
+                        }
+                    }
+
+                    JOptionPane.showMessageDialog(frame, "Successfully loaded!", "Success", JOptionPane.PLAIN_MESSAGE);
+                }
+                catch(Exception ex){
+                    JOptionPane.showMessageDialog(frame, "Sorry, something get wrong.", "Error", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        randomConfButton = ButtonFactory("Random");
+        randomConfButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                com.toros.gui.Box[][] boxes = field.getBoxes();
+                for(int i = 0; i < Config.VERTICAL_BOXES; i++){
+                    for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
+                        if(Math.random() < Config.LIVE_CELL_CHANCE) {
+                            boxes[i][j].getCell().setStatus(Status.LIVE);
+                            boxes[i][j].setColor();
+                        }
+                    }
+                }
+            }
+        });
+
+
+        /* SPINNERS */
+        JLabel speedSpinnerLabel = LabelFactory("One generation tick time: ");
+        speedSpinnerLabel.setAlignmentX(CENTER_ALIGNMENT);
+        SpinnerModel speedModel =
+                new SpinnerNumberModel(Config.SLEEPMS, 1, 100000, 10);
+        speedFieldSpinner = new JSpinner(speedModel);
+        speedFieldSpinner.setEditor(new JSpinner.DefaultEditor(speedFieldSpinner));
+        speedFieldSpinner.setMaximumSize(new Dimension(100, 20));
+        speedFieldSpinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                Config.SLEEPMS = (int)speedFieldSpinner.getValue() / 2;
+                field.getTimer().setDelay(Config.SLEEPMS);
+            }
+        });
+
+        JLabel chanceSpinnerLabel = LabelFactory("Live cell chance(%): ");
+        chanceSpinnerLabel.setAlignmentX(CENTER_ALIGNMENT);
+        SpinnerModel chanceModel =
+                new SpinnerNumberModel(50, 1, 100, 1);
+        initialChanceSpinner = new JSpinner(chanceModel);
+        initialChanceSpinner.setEditor(new JSpinner.DefaultEditor(initialChanceSpinner));
+        initialChanceSpinner.setMaximumSize(new Dimension(100, 20));
+        initialChanceSpinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+               int chance = (int)initialChanceSpinner.getValue();
+               Config.LIVE_CELL_CHANCE = (double)chance / 100.0;
+            }
+        });
+
+
+        /* LEGEND */
         Legend legend = new Legend();
+
+        /* TIMER PANEL */
         timerPanel = new TimerPanel();
 
-        startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        stopButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        clearButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        saveButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel buttonsPanel = new JPanel();
+        buttonsPanel.setBackground(Config.TOOLBAR_COLOR);
+        buttonsPanel.setPreferredSize(new Dimension(Config.TOOLBAR_WIDTH - 20, Config.FRAME_HEIGHT - 300));
+        buttonsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        buttonsPanel.add(startButton);
+        buttonsPanel.add(stopButton);
+        buttonsPanel.add(clearButton);
+        buttonsPanel.add(saveButton);
+        buttonsPanel.add(loadSaveButton);
+        buttonsPanel.add(randomConfButton);
 
         add(Box.createRigidArea(new Dimension(0, 20)));
-        add(startButton);
+        add(buttonsPanel);
+        add(Box.createRigidArea(new Dimension(0, 20)));
+        add(chanceSpinnerLabel);
+        add(Box.createRigidArea(new Dimension(0, 5)));
+        add(initialChanceSpinner);
         add(Box.createRigidArea(new Dimension(0, 10)));
-        add(stopButton);
-        add(Box.createRigidArea(new Dimension(0, 10)));
-        add(clearButton);
-        add(Box.createRigidArea(new Dimension(0, 10)));
-        add(saveButton);
+        add(speedSpinnerLabel);
+        add(Box.createRigidArea(new Dimension(0, 5)));
+        add(speedFieldSpinner);
         add(Box.createRigidArea(new Dimension(0, 20)));
         add(legend);
         add(Box.createRigidArea(new Dimension(0, 20)));
@@ -101,7 +229,7 @@ class Toolbar extends JPanel {
     public static JButton ButtonFactory(String text){
         JButton button = new JButton(text);
         button.setBackground(Color.BLACK);
-        button.setFont(new Font("Arial", Font.PLAIN, 24));
+        button.setFont(new Font("Arial", Font.PLAIN, 20));
         button.setForeground(Color.WHITE);
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.WHITE, 3),
@@ -135,8 +263,17 @@ class Toolbar extends JPanel {
         JLabel label = new JLabel(text);
         label.setBackground(Config.TOOLBAR_COLOR);
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Arial", Font.PLAIN, 18));
+        label.setFont(new Font("Arial", Font.PLAIN, 14));
         return label;
+    }
+
+    void repaintField(){
+        com.toros.gui.Box[][] boxes = field.getBoxes();
+        for(int i = 0; i < Config.VERTICAL_BOXES; i++){
+            for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
+                boxes[i][j].setColor();
+            }
+        }
     }
 
     private class TimerPanel extends JPanel{
@@ -193,7 +330,7 @@ class Toolbar extends JPanel {
             setBackground(Config.TOOLBAR_COLOR);
             setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
             setPreferredSize(new Dimension(Config.TOOLBAR_WIDTH, Config.FRAME_HEIGHT / 2));
-            title = LabelFactory("Legend: ");
+            title = LabelFactory("Legend(click on colorbox to select): ");
             title.setAlignmentX(Component.CENTER_ALIGNMENT);
             add(title);
             add(Box.createRigidArea(new Dimension(0, 10)));
@@ -202,6 +339,22 @@ class Toolbar extends JPanel {
                 JPanel colorbox = new JPanel();
                 colorbox.setBackground(Config.getColor(status));
                 colorbox.setSize(10, 10);
+                colorbox.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        Color color = JColorChooser.showDialog(frame, "Choose " + status.toString() + " color", Config.getColor(status));
+                        if(color != null){
+                            switch(status){
+                                case NONE -> Config.NONE_COLOR = color;
+                                case BORN -> Config.BORN_COLOR = color;
+                                case LIVE -> Config.LIVE_COLOR = color;
+                                case DIED -> Config.DIED_COLOR = color;
+                            }
+                            repaintField();
+                            colorbox.setBackground(color);
+                        }
+                    }
+                });
                 add(createLegendRow(colorbox, LabelFactory(" - " + status.toString())));
             }
         }

@@ -36,7 +36,7 @@ public class Window implements Runnable {
     }
 
     private void initToolbar(){
-        toolbar = new Toolbar(field);
+        toolbar = new Toolbar(field, frame);
         frame.add(toolbar);
     }
 }
