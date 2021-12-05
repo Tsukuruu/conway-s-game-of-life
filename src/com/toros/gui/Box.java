@@ -32,4 +32,14 @@ public class Box extends JPanel implements Serializable {
         cell.change();
         setColor();
     }
+
+    void turn(){
+        cell.turn();
+        setColor();
+    }
+
+    void die(){
+        cell.setStatus(Status.NONE);
+        setColor();
+    }
 }
