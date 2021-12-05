@@ -16,7 +16,9 @@ public class Cell implements Serializable{
         return this.status;
     }
 
-    void addNeighbour(Cell cell){
+    public void setStatus(Status status){ this.status = status; }
+
+    public void addNeighbour(Cell cell){
         neighbours.add(cell);
     }
 
@@ -29,7 +31,7 @@ public class Cell implements Serializable{
         status = status.change();
     }
 
-    void turn(){
+    public void turn(){
         this.status = this.status.cellExists() ? Status.NONE: Status.LIVE;
     }
 

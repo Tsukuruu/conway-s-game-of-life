@@ -1,5 +1,6 @@
 package com.toros.gui;
 import com.toros.config.*;
+import com.toros.core.Status;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,15 +37,15 @@ class Field extends JPanel implements Serializable {
         }
 
         //Define neighbours
-        for(int x = 0; x < Config.VERTICAL_BOXES; x++){
-            for(int y = 0; y < Config.HORIZONTAL_BOXES; y++){
+        for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
+            for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
                 for(int sx = -1; sx <= 1; sx++){
                     for(int sy = -1; sy <= 1; sy++){
                         if(sx == 0 && sy == 0) continue;
                         //Compute neighbours to create torus-like field
                         boxes[x][y].getCell().addNeighbour(boxes
                                 [(x + sx + Config.VERTICAL_BOXES) % Config.VERTICAL_BOXES]
-                                [(y + sy + Config.HORIZONTAL_BOXES) % Config.HORIZONTAL_BOXES].cell);
+                                [(y + sy + Config.HORIZONTAL_BOXES) % Config.HORIZONTAL_BOXES].getCell());
                     }
                 }
             }
@@ -56,17 +57,16 @@ class Field extends JPanel implements Serializable {
         timer = new Timer(Config.SLEEPMS, tl);
     }
 
-    public void clear(){
-        for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
-            for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
-                    boxes[x][y].cell.status = Status.NONE;
-                    boxes[x][y].cell.container.setColor();
-            }
-        }
-    }
-
     public Timer getTimer(){
         return timer;
+    }
+
+    void clear(){
+        for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
+            for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
+                boxes[x][y].die();
+            }
+        }
     }
 
     private class TimerListener implements ActionListener {
@@ -93,7 +93,7 @@ class Field extends JPanel implements Serializable {
             int xbox = point.y / Config.BOX_SIZE;
             int ybox = point.x / Config.BOX_SIZE;
             if((xbox < Config.VERTICAL_BOXES && xbox > 0) && (ybox < Config.HORIZONTAL_BOXES && ybox > 0)) {
-                boxes[xbox][ybox].cell.turn();
+                boxes[xbox][ybox].turn();
             }
         }
     }
@@ -105,7 +105,7 @@ class Field extends JPanel implements Serializable {
             int xbox = point.y / Config.BOX_SIZE;
             int ybox = point.x / Config.BOX_SIZE;
             if((xbox < Config.VERTICAL_BOXES && xbox > 0) && (ybox < Config.HORIZONTAL_BOXES && ybox > 0)) {
-                boxes[xbox][ybox].cell.turn();
+                boxes[xbox][ybox].turn();
             }
         }
     }

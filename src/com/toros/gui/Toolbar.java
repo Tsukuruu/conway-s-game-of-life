@@ -1,6 +1,6 @@
 package com.toros.gui;
 import com.toros.config.*;
-import com.toros.core.*;
+import com.toros.core.Status;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,19 +12,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import javax.swing.Box;
+import javax.swing.border.LineBorder;
 
 class Toolbar extends JPanel {
 
     Field field;
+
     JButton startButton;
     JButton stopButton;
     JButton clearButton;
     JButton saveButton;
-    JLabel clickTypeLabel;
+
     Legend legend;
-    ButtonGroup radios;
-    JRadioButton oneCellClick;
-    JRadioButton neighboursClick;
     TimerPanel timerPanel;
 
     Toolbar(Field field){
@@ -35,25 +34,25 @@ class Toolbar extends JPanel {
         setBackground(Config.TOOLBAR_COLOR);
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
-        startButton = Toolbar.ButtonFactory("Start");
+        startButton = ButtonFactory("Start");
         startButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 field.getTimer().start();
-                timerPanel.getTimer().start();
+                timerPanel.timer.start();
             }
         });
 
-        stopButton = Toolbar.ButtonFactory("Stop");
+        stopButton = ButtonFactory("Stop");
         stopButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 field.getTimer().stop();
-                timerPanel.getTimer().stop();
+                timerPanel.timer.stop();
             }
         });
 
-        clearButton = Toolbar.ButtonFactory("Clear");
+        clearButton = ButtonFactory("Clear");
         clearButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -62,7 +61,7 @@ class Toolbar extends JPanel {
             }
         });
 
-        saveButton = Toolbar.ButtonFactory("Save");
+        saveButton = ButtonFactory("Save");
         saveButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -77,40 +76,13 @@ class Toolbar extends JPanel {
             }
         });
 
-        clickTypeLabel = Toolbar.LabelFactory("Choose the click type: ");
-
-        radios = new ButtonGroup();
-        oneCellClick = Toolbar.RadioFactory("One cell");
-        oneCellClick.addActionListener(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Cell.clickMode = Cell.ClickMode.ONECELL;
-            }
-        });
-
-        neighboursClick = Toolbar.RadioFactory("Neighbours");
-        neighboursClick.addActionListener(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Cell.clickMode = Cell.ClickMode.NEIGHBOURS;
-            }
-        });
-
         Legend legend = new Legend();
         timerPanel = new TimerPanel();
-
-
-        oneCellClick.setSelected(true);
-        radios.add(oneCellClick);
-        radios.add(neighboursClick);
 
         startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         stopButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         clearButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         saveButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        clickTypeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        oneCellClick.setAlignmentX(Component.CENTER_ALIGNMENT);
-        neighboursClick.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         add(Box.createRigidArea(new Dimension(0, 20)));
         add(startButton);
@@ -120,12 +92,6 @@ class Toolbar extends JPanel {
         add(clearButton);
         add(Box.createRigidArea(new Dimension(0, 10)));
         add(saveButton);
-        add(Box.createRigidArea(new Dimension(0, 20)));
-        add(clickTypeLabel);
-        add(Box.createRigidArea(new Dimension(0, 10)));
-        add(oneCellClick);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-        add(neighboursClick);
         add(Box.createRigidArea(new Dimension(0, 20)));
         add(legend);
         add(Box.createRigidArea(new Dimension(0, 20)));
@@ -141,6 +107,8 @@ class Toolbar extends JPanel {
                 BorderFactory.createLineBorder(Color.WHITE, 3),
                 BorderFactory.createLineBorder(Color.BLACK, 10)));
 
+
+        /* Add hover effect */
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -162,16 +130,6 @@ class Toolbar extends JPanel {
         return button;
     }
 
-    public static JRadioButton RadioFactory(String text){
-
-        JRadioButton radio = new JRadioButton(text);
-        radio.setBackground(Config.TOOLBAR_COLOR);
-        radio.setForeground(Color.WHITE);
-        radio.setFocusPainted(false);
-        radio.setFont(new Font("Arial", Font.PLAIN, 18));
-        return radio;
-    }
-
     public static JLabel LabelFactory(String text){
 
         JLabel label = new JLabel(text);
@@ -190,12 +148,10 @@ class Toolbar extends JPanel {
         private int min = 0;
         private int hours = 0;
 
-        TimerPanel(){
+        private TimerPanel(){
             super();
             setBackground(Config.TOOLBAR_COLOR);
-            timerDisplay = new JLabel("00:00:00");
-            timerDisplay.setBackground(Config.TOOLBAR_COLOR);
-            timerDisplay.setForeground(Config.TEXT_COLOR);
+            timerDisplay = LabelFactory("00:00:00");
             timer = new Timer(1000, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -219,11 +175,7 @@ class Toolbar extends JPanel {
             add(timerDisplay);
         }
 
-        Timer getTimer(){
-            return timer;
-        }
-
-        void clear(){
+        private void clear(){
             min = 0;
             sec = 0;
             hours = 0;
@@ -233,11 +185,7 @@ class Toolbar extends JPanel {
 
     private class Legend extends JPanel{
 
-        JLabel title;
-        JPanel none;
-        JPanel born;
-        JPanel live;
-        JPanel died;
+        private JLabel title;
 
         Legend(){
             super();
@@ -245,41 +193,21 @@ class Toolbar extends JPanel {
             setBackground(Config.TOOLBAR_COLOR);
             setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
             setPreferredSize(new Dimension(Config.TOOLBAR_WIDTH, Config.FRAME_HEIGHT / 2));
-            title = new JLabel("Legend: ");
-            title.setForeground(Config.TEXT_COLOR);
+            title = LabelFactory("Legend: ");
             title.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-            JPanel nonecolor = new JPanel();
-            nonecolor.setBackground(Config.getColor(Status.NONE));
-            nonecolor.setSize(5, 5);
-            none = createLegendRow(nonecolor, new JLabel(" - dead"));
-
-            JPanel borncolor = new JPanel();
-            borncolor.setBackground(Config.getColor(Status.BORN));
-            borncolor.setSize(5, 5);
-            born = createLegendRow(borncolor, new JLabel(" - born"));
-
-            JPanel livecolor = new JPanel();
-            livecolor.setBackground(Config.getColor(Status.LIVE));
-            livecolor.setSize(5, 5);
-            live = createLegendRow(livecolor, new JLabel(" - live"));
-
-            JPanel diedcolor = new JPanel();
-            diedcolor.setBackground(Config.getColor(Status.DIED));
-            diedcolor.setSize(5, 5);
-            died = createLegendRow(diedcolor, new JLabel(" - dying"));
-
             add(title);
             add(Box.createRigidArea(new Dimension(0, 10)));
-            add(none);
-            add(born);
-            add(live);
-            add(died);
+
+            for(Status status: Status.values()){
+                JPanel colorbox = new JPanel();
+                colorbox.setBackground(Config.getColor(status));
+                colorbox.setSize(10, 10);
+                add(createLegendRow(colorbox, LabelFactory(" - " + status.toString())));
+            }
         }
     }
 
     private JPanel createLegendRow(Component key, Component value){
-        value.setForeground(Config.TEXT_COLOR);
         JPanel row = new JPanel();
         row.setAlignmentX(Component.CENTER_ALIGNMENT);
         row.setBackground(Config.TOOLBAR_COLOR);
@@ -289,5 +217,4 @@ class Toolbar extends JPanel {
         row.setMaximumSize(new Dimension(100, 30));
         return row;
     }
-
 }
