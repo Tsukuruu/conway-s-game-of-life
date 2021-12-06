@@ -5,9 +5,6 @@ import com.toros.core.Status;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
 
 class Field extends JPanel{
 
@@ -26,6 +23,14 @@ class Field extends JPanel{
 
         addMouseListener(new FieldClicker());
         addMouseMotionListener(new FieldDragger());
+    }
+
+    public Box[][] getBoxes() {
+        return boxes;
+    }
+
+    public Timer getTimer(){
+        return timer;
     }
 
     private void initBoxes() {
@@ -54,18 +59,11 @@ class Field extends JPanel{
         }
     }
 
-    public Box[][] getBoxes() {
-        return boxes;
-    }
-
     private void initTimer(){
         TimerListener tl = new TimerListener();
         timer = new Timer(Config.SLEEPMS, tl);
     }
 
-    public Timer getTimer(){
-        return timer;
-    }
 
     void clear(){
         for (int x = 0; x < Config.VERTICAL_BOXES; x++) {

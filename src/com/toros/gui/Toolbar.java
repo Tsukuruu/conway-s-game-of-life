@@ -1,6 +1,5 @@
 package com.toros.gui;
 import com.toros.config.*;
-import com.toros.core.Cell;
 import com.toros.core.Status;
 
 import javax.swing.*;
@@ -9,7 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.*;
 import javax.swing.Box;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -75,28 +73,21 @@ class Toolbar extends JPanel {
         saveButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                File save = new File(Config.SAVES_FILE_PATH);
-                try{
-                    save.createNewFile();
-                }catch (Exception ex){
-                    ex.printStackTrace();
-                }
-
-                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(save, false)))
-                {
-                    com.toros.gui.Box[][] boxes = field.getBoxes();
-                    for(int i = 0; i < Config.VERTICAL_BOXES; i++){
-                        for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
-                            oos.writeObject(boxes[i][j].getCell());
+                com.toros.gui.Box[][] boxes = field.getBoxes();
+                for (int i = 0; i < Config.VERTICAL_BOXES; i++) {
+                    for (int j = 0; j < Config.HORIZONTAL_BOXES; j++) {
+                        int status = 0;
+                        switch(boxes[i][j].getCell().getStatus()){
+                            case NONE -> status = 0;
+                            case BORN -> status = 1;
+                            case LIVE -> status = 2;
+                            case DIED -> status = 3;
                         }
+                        Config.userPref.putInt("cell" + i + "_" + j +"_status", status);
                     }
+                }
 
-                    JOptionPane.showMessageDialog(frame, "Successfully saved!", "Success", JOptionPane.PLAIN_MESSAGE);
-                }
-                catch(Exception ex){
-                    JOptionPane.showMessageDialog(frame, "Sorry, something get wrong.", "Error", JOptionPane.ERROR_MESSAGE);
-                    ex.printStackTrace();
-                }
+                JOptionPane.showMessageDialog(frame, "Successfully saved!", "Success", JOptionPane.PLAIN_MESSAGE);
             }
         });
 
@@ -104,43 +95,23 @@ class Toolbar extends JPanel {
         loadSaveButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                File save = new File(Config.SAVES_FILE_PATH);
-                if(!save.isFile()){
-                    JOptionPane.showMessageDialog(frame, "Error! No save found.", "No save", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
 
-
-                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(save)))
-                {
-                    com.toros.gui.Box[][] boxes = field.getBoxes();
-                    for(int i = 0; i < Config.VERTICAL_BOXES; i++){
-                        for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
-                            boxes[i][j].setCell((Cell) ois.readObject());
+                com.toros.gui.Box[][] boxes = field.getBoxes();
+                for (int i = 0; i < Config.VERTICAL_BOXES; i++) {
+                    for (int j = 0; j < Config.HORIZONTAL_BOXES; j++) {
+                        Status status = Status.NONE;
+                        switch(Config.userPref.getInt("cell" + i + "_" + j +"_status", 0)){
+                            case 0 -> status = Status.NONE;
+                            case 1 -> status = Status.BORN;
+                            case 2 -> status = Status.LIVE;
+                            case 3 -> status = Status.DIED;
                         }
+                        boxes[i][j].getCell().setStatus(status);
+                        boxes[i][j].setColor();
                     }
-
-                    //Define neighbours
-                    for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
-                        for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
-                            for(int sx = -1; sx <= 1; sx++){
-                                for(int sy = -1; sy <= 1; sy++){
-                                    if(sx == 0 && sy == 0) continue;
-                                    //Compute neighbours to create torus-like field
-                                    boxes[x][y].getCell().addNeighbour(boxes
-                                            [(x + sx + Config.VERTICAL_BOXES) % Config.VERTICAL_BOXES]
-                                            [(y + sy + Config.HORIZONTAL_BOXES) % Config.HORIZONTAL_BOXES].getCell());
-                                }
-                            }
-                        }
-                    }
-
-                    JOptionPane.showMessageDialog(frame, "Successfully loaded!", "Success", JOptionPane.PLAIN_MESSAGE);
                 }
-                catch(Exception ex){
-                    JOptionPane.showMessageDialog(frame, "Sorry, something get wrong.", "Error", JOptionPane.ERROR_MESSAGE);
-                    ex.printStackTrace();
-                }
+
+                JOptionPane.showMessageDialog(frame, "Successfully loaded!", "Success", JOptionPane.PLAIN_MESSAGE);
             }
         });
 
@@ -174,13 +145,14 @@ class Toolbar extends JPanel {
             public void stateChanged(ChangeEvent e) {
                 Config.SLEEPMS = (int)speedFieldSpinner.getValue() / 2;
                 field.getTimer().setDelay(Config.SLEEPMS);
+                Config.userPref.putInt("SLEEPMS", Config.SLEEPMS);
             }
         });
 
         JLabel chanceSpinnerLabel = LabelFactory("Live cell chance(%): ");
         chanceSpinnerLabel.setAlignmentX(CENTER_ALIGNMENT);
         SpinnerModel chanceModel =
-                new SpinnerNumberModel(50, 1, 100, 1);
+                new SpinnerNumberModel((int)(Config.LIVE_CELL_CHANCE * 100), 1, 100, 1);
         initialChanceSpinner = new JSpinner(chanceModel);
         initialChanceSpinner.setEditor(new JSpinner.DefaultEditor(initialChanceSpinner));
         initialChanceSpinner.setMaximumSize(new Dimension(100, 20));
@@ -189,6 +161,7 @@ class Toolbar extends JPanel {
             public void stateChanged(ChangeEvent e) {
                int chance = (int)initialChanceSpinner.getValue();
                Config.LIVE_CELL_CHANCE = (double)chance / 100.0;
+               Config.userPref.putDouble("LIVE_CELL_CHANCE", Config.LIVE_CELL_CHANCE);
             }
         });
 
@@ -199,6 +172,7 @@ class Toolbar extends JPanel {
         /* TIMER PANEL */
         timerPanel = new TimerPanel();
 
+        /* BUTTON PANEL */
         JPanel buttonsPanel = new JPanel();
         buttonsPanel.setBackground(Config.TOOLBAR_COLOR);
         buttonsPanel.setPreferredSize(new Dimension(Config.TOOLBAR_WIDTH - 20, Config.FRAME_HEIGHT - 300));
@@ -210,6 +184,7 @@ class Toolbar extends JPanel {
         buttonsPanel.add(loadSaveButton);
         buttonsPanel.add(randomConfButton);
 
+        /* ADDING COMPONENTS */
         add(Box.createRigidArea(new Dimension(0, 20)));
         add(buttonsPanel);
         add(Box.createRigidArea(new Dimension(0, 20)));
@@ -267,15 +242,6 @@ class Toolbar extends JPanel {
         return label;
     }
 
-    void repaintField(){
-        com.toros.gui.Box[][] boxes = field.getBoxes();
-        for(int i = 0; i < Config.VERTICAL_BOXES; i++){
-            for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
-                boxes[i][j].setColor();
-            }
-        }
-    }
-
     private class TimerPanel extends JPanel{
 
         private Timer timer;
@@ -320,11 +286,11 @@ class Toolbar extends JPanel {
         }
     }
 
-    private class Legend extends JPanel{
+    private class Legend extends JPanel {
 
         private JLabel title;
 
-        Legend(){
+        Legend() {
             super();
             setAlignmentX(Component.CENTER_ALIGNMENT);
             setBackground(Config.TOOLBAR_COLOR);
@@ -335,7 +301,7 @@ class Toolbar extends JPanel {
             add(title);
             add(Box.createRigidArea(new Dimension(0, 10)));
 
-            for(Status status: Status.values()){
+            for (Status status : Status.values()) {
                 JPanel colorbox = new JPanel();
                 colorbox.setBackground(Config.getColor(status));
                 colorbox.setSize(10, 10);
@@ -343,8 +309,8 @@ class Toolbar extends JPanel {
                     @Override
                     public void mouseClicked(MouseEvent e) {
                         Color color = JColorChooser.showDialog(frame, "Choose " + status.toString() + " color", Config.getColor(status));
-                        if(color != null){
-                            switch(status){
+                        if (color != null) {
+                            switch (status) {
                                 case NONE -> Config.NONE_COLOR = color;
                                 case BORN -> Config.BORN_COLOR = color;
                                 case LIVE -> Config.LIVE_COLOR = color;
@@ -352,22 +318,32 @@ class Toolbar extends JPanel {
                             }
                             repaintField();
                             colorbox.setBackground(color);
+                            Config.userPref.putInt(status.toString() + "_COLOR", color.getRGB());
                         }
                     }
                 });
                 add(createLegendRow(colorbox, LabelFactory(" - " + status.toString())));
             }
         }
-    }
 
-    private JPanel createLegendRow(Component key, Component value){
-        JPanel row = new JPanel();
-        row.setAlignmentX(Component.CENTER_ALIGNMENT);
-        row.setBackground(Config.TOOLBAR_COLOR);
-        row.setLayout(new FlowLayout());
-        row.add(key);
-        row.add(value);
-        row.setMaximumSize(new Dimension(100, 30));
-        return row;
+        private void repaintField() {
+            com.toros.gui.Box[][] boxes = field.getBoxes();
+            for (int i = 0; i < Config.VERTICAL_BOXES; i++) {
+                for (int j = 0; j < Config.HORIZONTAL_BOXES; j++) {
+                    boxes[i][j].setColor();
+                }
+            }
+        }
+
+        private JPanel createLegendRow(Component key, Component value) {
+            JPanel row = new JPanel();
+            row.setAlignmentX(Component.CENTER_ALIGNMENT);
+            row.setBackground(Config.TOOLBAR_COLOR);
+            row.setLayout(new FlowLayout());
+            row.add(key);
+            row.add(value);
+            row.setMaximumSize(new Dimension(100, 30));
+            return row;
+        }
     }
 }
