@@ -22,6 +22,7 @@ public class Box extends JPanel{
         setColor();
     }
 
+
     void setColor(){
         setBackground(Config.getColor(cell.getStatus()));
     }
