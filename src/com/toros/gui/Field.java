@@ -1,4 +1,5 @@
 package com.toros.gui;
+
 import com.toros.config.*;
 import com.toros.core.Status;
 
@@ -6,12 +7,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-class Field extends JPanel{
+class Field extends JPanel {
 
     private Box[][] boxes;
     private Timer timer;
 
-    Field(GridLayout layout){
+    Field(GridLayout layout) {
         super();
 
         setSize(Config.FIELD_WIDTH, Config.FIELD_HEIGHT);
@@ -29,7 +30,7 @@ class Field extends JPanel{
         return boxes;
     }
 
-    public Timer getTimer(){
+    public Timer getTimer() {
         return timer;
     }
 
@@ -46,9 +47,9 @@ class Field extends JPanel{
         //Define neighbours
         for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
             for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
-                for(int sx = -1; sx <= 1; sx++){
-                    for(int sy = -1; sy <= 1; sy++){
-                        if(sx == 0 && sy == 0) continue;
+                for (int sx = -1; sx <= 1; sx++) {
+                    for (int sy = -1; sy <= 1; sy++) {
+                        if (sx == 0 && sy == 0) continue;
                         //Compute neighbours to create torus-like field
                         boxes[x][y].getCell().addNeighbour(boxes
                                 [(x + sx + Config.VERTICAL_BOXES) % Config.VERTICAL_BOXES]
@@ -59,13 +60,13 @@ class Field extends JPanel{
         }
     }
 
-    private void initTimer(){
+    private void initTimer() {
         TimerListener tl = new TimerListener();
         timer = new Timer(Config.SLEEPMS, tl);
     }
 
 
-    void clear(){
+    void clear() {
         for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
             for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
                 boxes[x][y].getCell().setStatus(Status.NONE);
@@ -76,14 +77,15 @@ class Field extends JPanel{
 
     private class TimerListener implements ActionListener {
         boolean flop = false;
+
         @Override
         public void actionPerformed(ActionEvent e) {
             flop = !flop;
             for (int x = 0; x < Config.VERTICAL_BOXES; x++) {
                 for (int y = 0; y < Config.HORIZONTAL_BOXES; y++) {
-                    if(flop) {
+                    if (flop) {
                         boxes[x][y].prepare();
-                    }else {
+                    } else {
                         boxes[x][y].change();
                     }
                 }
@@ -91,25 +93,25 @@ class Field extends JPanel{
         }
     }
 
-    private class FieldClicker extends MouseAdapter{
+    private class FieldClicker extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {
             Point point = e.getPoint();
             int xbox = point.y / Config.BOX_SIZE;
             int ybox = point.x / Config.BOX_SIZE;
-            if((xbox < Config.VERTICAL_BOXES && xbox > 0) && (ybox < Config.HORIZONTAL_BOXES && ybox > 0)) {
+            if ((xbox < Config.VERTICAL_BOXES && xbox > 0) && (ybox < Config.HORIZONTAL_BOXES && ybox > 0)) {
                 boxes[xbox][ybox].turn();
             }
         }
     }
 
-    private class FieldDragger extends MouseMotionAdapter{
+    private class FieldDragger extends MouseMotionAdapter {
         @Override
         public void mouseDragged(MouseEvent e) {
             Point point = e.getPoint();
             int xbox = point.y / Config.BOX_SIZE;
             int ybox = point.x / Config.BOX_SIZE;
-            if((xbox < Config.VERTICAL_BOXES && xbox > 0) && (ybox < Config.HORIZONTAL_BOXES && ybox > 0)) {
+            if ((xbox < Config.VERTICAL_BOXES && xbox > 0) && (ybox < Config.HORIZONTAL_BOXES && ybox > 0)) {
                 boxes[xbox][ybox].turn();
             }
         }

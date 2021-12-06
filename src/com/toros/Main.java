@@ -1,4 +1,5 @@
 package com.toros;
+
 import com.toros.gui.Window;
 
 public class Main {

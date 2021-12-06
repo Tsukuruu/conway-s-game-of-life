@@ -1,4 +1,5 @@
 package com.toros.config;
+
 import com.toros.core.Status;
 
 import java.awt.*;
@@ -26,14 +27,19 @@ public class Config {
     public static double LIVE_CELL_CHANCE = 0.5f;
     public static final Preferences userPref = Preferences.userRoot().node("game-of-life-by-toros-pref");
 
-    public static Color getColor(Status status){
+    public static Color getColor(Status status) {
 
-        switch (status){
-            case NONE: return NONE_COLOR;
-            case BORN: return BORN_COLOR;
-            case LIVE: return LIVE_COLOR;
-            case DIED: return DIED_COLOR;
-            default: return Color.BLACK;
+        switch (status) {
+            case NONE:
+                return NONE_COLOR;
+            case BORN:
+                return BORN_COLOR;
+            case LIVE:
+                return LIVE_COLOR;
+            case DIED:
+                return DIED_COLOR;
+            default:
+                return Color.BLACK;
         }
     }
 }

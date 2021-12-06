@@ -1,4 +1,5 @@
 package com.toros.gui;
+
 import com.toros.config.*;
 import com.toros.core.Status;
 
@@ -32,7 +33,7 @@ class Toolbar extends JPanel {
     Legend legend;
     TimerPanel timerPanel;
 
-    Toolbar(Field field, JFrame frame){
+    Toolbar(Field field, JFrame frame) {
         super();
         this.field = field;
         this.frame = frame;
@@ -77,13 +78,13 @@ class Toolbar extends JPanel {
                 for (int i = 0; i < Config.VERTICAL_BOXES; i++) {
                     for (int j = 0; j < Config.HORIZONTAL_BOXES; j++) {
                         int status = 0;
-                        switch(boxes[i][j].getCell().getStatus()){
+                        switch (boxes[i][j].getCell().getStatus()) {
                             case NONE -> status = 0;
                             case BORN -> status = 1;
                             case LIVE -> status = 2;
                             case DIED -> status = 3;
                         }
-                        Config.userPref.putInt("cell" + i + "_" + j +"_status", status);
+                        Config.userPref.putInt("cell" + i + "_" + j + "_status", status);
                     }
                 }
 
@@ -100,7 +101,7 @@ class Toolbar extends JPanel {
                 for (int i = 0; i < Config.VERTICAL_BOXES; i++) {
                     for (int j = 0; j < Config.HORIZONTAL_BOXES; j++) {
                         Status status = Status.NONE;
-                        switch(Config.userPref.getInt("cell" + i + "_" + j +"_status", 0)){
+                        switch (Config.userPref.getInt("cell" + i + "_" + j + "_status", 0)) {
                             case 0 -> status = Status.NONE;
                             case 1 -> status = Status.BORN;
                             case 2 -> status = Status.LIVE;
@@ -120,9 +121,9 @@ class Toolbar extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 com.toros.gui.Box[][] boxes = field.getBoxes();
-                for(int i = 0; i < Config.VERTICAL_BOXES; i++){
-                    for(int j = 0; j < Config.HORIZONTAL_BOXES; j++){
-                        if(Math.random() < Config.LIVE_CELL_CHANCE) {
+                for (int i = 0; i < Config.VERTICAL_BOXES; i++) {
+                    for (int j = 0; j < Config.HORIZONTAL_BOXES; j++) {
+                        if (Math.random() < Config.LIVE_CELL_CHANCE) {
                             boxes[i][j].getCell().setStatus(Status.LIVE);
                             boxes[i][j].setColor();
                         }
@@ -136,14 +137,14 @@ class Toolbar extends JPanel {
         JLabel speedSpinnerLabel = LabelFactory("One generation tick time: ");
         speedSpinnerLabel.setAlignmentX(CENTER_ALIGNMENT);
         SpinnerModel speedModel =
-                new SpinnerNumberModel(Config.SLEEPMS, 1, 100000, 10);
+                new SpinnerNumberModel(Config.SLEEPMS * 2, 1, 100000, 10);
         speedFieldSpinner = new JSpinner(speedModel);
         speedFieldSpinner.setEditor(new JSpinner.DefaultEditor(speedFieldSpinner));
         speedFieldSpinner.setMaximumSize(new Dimension(100, 20));
         speedFieldSpinner.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                Config.SLEEPMS = (int)speedFieldSpinner.getValue() / 2;
+                Config.SLEEPMS = (int) speedFieldSpinner.getValue() / 2;
                 field.getTimer().setDelay(Config.SLEEPMS);
                 Config.userPref.putInt("SLEEPMS", Config.SLEEPMS);
             }
@@ -152,22 +153,22 @@ class Toolbar extends JPanel {
         JLabel chanceSpinnerLabel = LabelFactory("Live cell chance(%): ");
         chanceSpinnerLabel.setAlignmentX(CENTER_ALIGNMENT);
         SpinnerModel chanceModel =
-                new SpinnerNumberModel((int)(Config.LIVE_CELL_CHANCE * 100), 1, 100, 1);
+                new SpinnerNumberModel((int) (Config.LIVE_CELL_CHANCE * 100), 1, 100, 1);
         initialChanceSpinner = new JSpinner(chanceModel);
         initialChanceSpinner.setEditor(new JSpinner.DefaultEditor(initialChanceSpinner));
         initialChanceSpinner.setMaximumSize(new Dimension(100, 20));
         initialChanceSpinner.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-               int chance = (int)initialChanceSpinner.getValue();
-               Config.LIVE_CELL_CHANCE = (double)chance / 100.0;
-               Config.userPref.putDouble("LIVE_CELL_CHANCE", Config.LIVE_CELL_CHANCE);
+                int chance = (int) initialChanceSpinner.getValue();
+                Config.LIVE_CELL_CHANCE = (double) chance / 100.0;
+                Config.userPref.putDouble("LIVE_CELL_CHANCE", Config.LIVE_CELL_CHANCE);
             }
         });
 
 
         /* LEGEND */
-        Legend legend = new Legend();
+        legend = new Legend();
 
         /* TIMER PANEL */
         timerPanel = new TimerPanel();
@@ -201,7 +202,7 @@ class Toolbar extends JPanel {
         add(timerPanel);
     }
 
-    public static JButton ButtonFactory(String text){
+    public static JButton ButtonFactory(String text) {
         JButton button = new JButton(text);
         button.setBackground(Color.BLACK);
         button.setFont(new Font("Arial", Font.PLAIN, 20));
@@ -233,7 +234,7 @@ class Toolbar extends JPanel {
         return button;
     }
 
-    public static JLabel LabelFactory(String text){
+    public static JLabel LabelFactory(String text) {
 
         JLabel label = new JLabel(text);
         label.setBackground(Config.TOOLBAR_COLOR);
@@ -242,7 +243,7 @@ class Toolbar extends JPanel {
         return label;
     }
 
-    private class TimerPanel extends JPanel{
+    private class TimerPanel extends JPanel {
 
         private Timer timer;
         private JLabel timerDisplay;
@@ -251,18 +252,18 @@ class Toolbar extends JPanel {
         private int min = 0;
         private int hours = 0;
 
-        private TimerPanel(){
+        private TimerPanel() {
             super();
             setBackground(Config.TOOLBAR_COLOR);
             timerDisplay = LabelFactory("00:00:00");
             timer = new Timer(1000, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if(sec + 1 == 60){
+                    if (sec + 1 == 60) {
                         min++;
                         sec = -1;
                     }
-                    if(min + 1 == 60){
+                    if (min + 1 == 60) {
                         hours++;
                         min = 0;
                     }
@@ -271,14 +272,14 @@ class Toolbar extends JPanel {
                     String hh = hours < 10 ? "0" + hours : "" + hours;
                     String mm = min < 10 ? "0" + min : "" + min;
                     String ss = sec < 10 ? "0" + sec : "" + sec;
-                    timerDisplay.setText(hh+ ":" + mm + ":" + ss);
+                    timerDisplay.setText(hh + ":" + mm + ":" + ss);
                 }
             });
 
             add(timerDisplay);
         }
 
-        private void clear(){
+        private void clear() {
             min = 0;
             sec = 0;
             hours = 0;
